@@ -2,9 +2,12 @@ var restify = require('restify');
 var builder = require('botbuilder');
 
 //constants data
+
 var port = process.env.PORT || 3011;
 var msAppId = process.env.MICROSOFT_APP_ID;
 var msAppPassword = process.env.MICROSOFT_APP_PASSWORD;
+//console.log(process.env.MICROSOFT_APP_ID);
+console.log(process.env);
 
 //Setup Restify Server
 var server = restify.createServer();
