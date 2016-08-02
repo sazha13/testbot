@@ -14,8 +14,11 @@ server.listen(process.env.port || process.env.PORT || 3978, function () {
  
 // Create chat bot
 var connector = new builder.ChatConnector({appId: msAppId, appPassword: msAppPassword});
+console.log(connector);
 var bot = new builder.UniversalBot(connector);
+
 server.post('/api/messages', connector.listen()); 
+
 bot.dialog('/', function (session) {
   session.send('Provider bot in operation :-)');
 //	session.send();
