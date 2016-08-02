@@ -14,6 +14,8 @@ var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
    console.log('%s listening to %s', server.name, server.url); 
 });
+
+server.get('/', respond);
  
 // Create chat bot
 var connector = new builder.ChatConnector({appId: msAppId, appPassword: msAppPassword});
@@ -26,3 +28,10 @@ bot.dialog('/', function (session) {
   session.send('Provider bot in operation :-)');
 //	session.send();
 });
+
+
+function respond(req, res, next) {
+	  res.contentType = "text/plain";
+	  res.send("HERE");
+	  next();
+	}
