@@ -16,6 +16,7 @@ server.listen(process.env.port || process.env.PORT || 3978, function () {
 });
 
 server.get('/', respond);
+server.post('/request', handleRequestMessage);
  
 // Create chat bot
 var connector = new builder.ChatConnector({appId: msAppId, appPassword: msAppPassword});
@@ -33,5 +34,9 @@ bot.dialog('/', function (session) {
 function respond(req, res, next) {
 	  res.contentType = "text/plain";
 	  res.send("HERE");
+	  next();
+	}
+function handleRequestMessage(req, res, next) {
+	  res.send('POST API Response!!!');
 	  next();
 	}
