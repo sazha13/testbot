@@ -54,8 +54,9 @@ function handleRequestMessage(req, res, next)
 //bot Functions
 function botDialog(session)
 {
-	session.send('Provider bot in operation :-)');
 	console.log(session.message.address);
+	session.send('Provider bot in operation :-)');
+	
 }
 //mongoose
 mongoose.connect("mongodb://test:test@ds139685.mlab.com:39685/providerbotv3");
