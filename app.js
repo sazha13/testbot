@@ -40,10 +40,11 @@ server.post('/request', handleRequestMessage);
 //server.post('/thread/:THREAD_ID/message_seen/:MSG_ID',postThreadMsgSeen);
 
 //REST API functions
+var servermsg = " HERE";
 function respond(req, res, next) 
 {
 	  res.contentType = "text/plain";
-	  res.send("HERE");
+	  res.send(servermsg);
 	  next();
 }
 function handleRequestMessage(req, res, next) 
@@ -54,7 +55,8 @@ function handleRequestMessage(req, res, next)
 //bot Functions
 function botDialog(session)
 {
-	console.log(session.message.address);
+//	console.log(session.message.address);
+	servermsg = JSON.stringify(session)
 	session.send('Provider bot in operation :-)');
 	
 }
