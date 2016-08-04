@@ -57,6 +57,8 @@ function botDialog(session)
 {
 //	console.log(session.message.address);
 	servermsg = JSON.stringify(session.message);
+	servermsg += JSON.stringify(session.userData);
+	servermsg += JSON.stringify(session.sessionState);
 	session.send('Provider bot in operation :-)');
 	
 }
