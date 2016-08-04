@@ -56,7 +56,7 @@ function handleRequestMessage(req, res, next)
 function botDialog(session)
 {
 //	console.log(session.message.address);
-	servermsg = JSON.stringify(session);
+	servermsg = JSON.stringify(session.message);
 	session.send('Provider bot in operation :-)');
 	
 }
