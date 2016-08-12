@@ -69,16 +69,16 @@ function handleRequestMessage(req, res, next)
 	  res.send('POST API Response!!!');
 	  next();
 }
-function GetThreadLastMsg(threadId)
-{
-  var query = MsgDB.find({"ThreadId": threadId}).limit(1).select('created text').sort({"created": -1});
-  return query;
-};
-function GetFrom(threadId)
-{
-  var query = ChanelDB.find().select('from');
-  return query;
-};
+// function GetThreadLastMsg(threadId)
+// {
+//   var query = MsgDB.find({"ThreadId": threadId}).limit(1).select('created text').sort({"created": -1});
+//   return query;
+// };
+// function GetFrom(threadId)
+// {
+//   var query = ChanelDB.find().select('from');
+//   return query;
+// };
 
 function postCreateProvider(req, res, next)
 {
@@ -184,7 +184,7 @@ function getThreads(req, res, next)
           continue;
         }
         result[i].consumer = {};
-        result[i].consumer.name = items[0].user.name;
+        result[i].consumer.name = items[0].username;
         result[i].consumer.id = items[0]._id;
         result[i].consumer.type = 'consumer';
         LCheckConsumers();
@@ -353,7 +353,7 @@ function postThreadMsgs(req, res, next)
       finish(true);
       return;
     }
-    reply.address(item);
+    reply.address(item.address);
     finish(false);
   }
   function finish(err)
@@ -444,11 +444,6 @@ function postThreadMsgSeen(req, res, next)
 //bot Functions
 function botDialog(session)
 {
-
-  // var record = new ChanelDB(session.message.address);
-  // //record.save();
-  // sendMsg(record);
-	// session.send('Provider bot in operation :-)');
   session.send();
 //just test APNS
 	var notification = new apns.Notification();
@@ -462,20 +457,17 @@ function botDialog(session)
 	});
 
 //end test
-
-
-	  var from1 = session.message;
     var recvedMsg = session.message;
-
-
     ServerMsg = 'HERE';
-
+    console.log(session);
+    console.log(session.message.sourceEvent);
     //new API
-    ChanelDB.findOne({ 'user.id': recvedMsg.address.user.id }, function(err, item) {
+    ChanelDB.findOne({ 'address.user.id': recvedMsg.address.user.id }, function(err, item) {
       if (err) return console.error(err);
       if (item == null)
       {
-        var record = new ChanelDB(recvedMsg.address);
+        var record = new ChanelDB(recvedMsg);
+        record.username = recvedMsg.sourceEvent.message.from.first_name + ' ' + recvedMsg.sourceEvent.message.from.last_name;
         record.save();
         CheckThreads(record.id,recvedMsg);
       }
@@ -486,6 +478,19 @@ function botDialog(session)
     });
     function CheckThreads(chanelId,recvedMsg)
     {
+      WelcomeMsgDB.find().limit(1).sort({"added":-1}).exec(function (err,items){
+        if (items.length == 0)
+          return;
+        if (items[0].consumersSended.indexOf(chanelId)==-1)
+        {
+          session.send(items[0].message);
+          items[0].consumersSended[items[0].consumersSended.length]=chanelId;
+          items[0].markModified('consumersSended');
+          items[0].save();
+          // console.log(items[0]);
+          // WelcomeMsgDB.update({"_id":items[0]._id},{$push:{consumersSended:chanelId}},function(err, num){});
+        }
+      });
       ThreadDB.find({"consumer" : chanelId}).exec(LonFindConsumers);
       function LonFindConsumers(err,items){
         if (items.length==0)
@@ -499,16 +504,12 @@ function botDialog(session)
 
     }
     function CreateNewThreads(chanelId,recvedMsg){
-      console.log("HERE1");
       var msgid = AddUserMsgInDB(chanelId,recvedMsg);
-      console.log("HERE2");
       ProviderDB.find().exec(AddThread);
         function AddThread(err,items){
-          console.log(items);
           items.forEach(function(item){
             var record = new ThreadDB({"consumer": chanelId, "provider": item._id, "msgs":[msgid], "last_seen":"0"});
             record.save();
-            console.log("HERE "+ record);
           });
         }
     }
@@ -516,30 +517,17 @@ function botDialog(session)
 };
 function AddUserMsgInDB(ChanelId, msg)
 {
-    console.log("HERE "+ ChanelId);
-    console.log(msg);
     var record = new MsgDB();
-    console.log("HERE1235");
     record.message = msg.text;
-    console.log("HERE1235");
     record.type = 'text';
-    console.log("HERE1235");
     record.ChanelId = ChanelId;
-    console.log("HERE1235");
-    record.sender.name = msg.address.user.name;
-    console.log("HERE1235");
+    record.sender.name = msg.sourceEvent.message.from.first_name + ' ' + msg.sourceEvent.message.from.last_name;
     record.sender.id = ChanelId;
-    console.log("HERE1235");
     record.sender.type = 'consumer';
-    console.log("HERE1235");
     record.fromUser = true;
-    console.log("HERE1235");
     record.id = msg.id;
-    console.log("HERE1235");
     record.attachments = msg.attachments;
-    console.log("HERE123");
     record.save();
-    console.log("HERE12");
     var record1 = JSON.parse(JSON.stringify(record));;
     record1.sent = record.sent.getTime()/1000|0;
     wss.clients.forEach(SendWSMsg);
@@ -558,9 +546,14 @@ db.on('error', console.error);
 db.once('open', function()
 {
   console.log("connection DB ok");
+//   var record = new WelcomeMsgDB();
+//   record.message = "Bundles объединяет шоурумы и дизайнеров одежды, чтобы помочь тебе быстро найти то, что ты хочешь.\n" +
+// "Сейчас Bundles Bot учится понимать людей с полуслова и проходит закрытое бета-тестирование. Чтобы получить доступ к публичной бете одним из первых, сохрани этот контакт, и Bundles Bot пригласит тебя, как только она будет открыта.";
+//   record.save();
 });
 
 var SchemaChanel = new mongoose.Schema({
+  address:{
   /*bot:{
     id: String,
     isGroup: Boolean,
@@ -576,6 +569,8 @@ var SchemaChanel = new mongoose.Schema({
     id: String,
     isGroup: Boolean,
     name: String}
+  },
+  username: {type: String}
 });
 var SchemaMsg = new mongoose.Schema({
   ChanelId : {type: String},
@@ -605,9 +600,15 @@ var SchemaThread = new mongoose.Schema({
   msgs: [String],
   last_seen: {type: String}
 });
+var SchemaWelcomeMsg = new mongoose.Schema({
+  message: {type: String},
+  date: {type: Date, default: Date.now},
+  consumersSended: []
+});
 
 var MsgDB = mongoose.model('MsgSchema',SchemaMsg);
 var ChanelDB = mongoose.model('ChanelSchema',SchemaChanel);
 var ProviderDB = mongoose.model('ProviderSchema',SchemaProvider);
 var APNSDB = mongoose.model('APNSSchema',SchemaAPNS);
 var ThreadDB = mongoose.model('ThreadSchema',SchemaThread);
+var WelcomeMsgDB = mongoose.model('WelcomeMsgSchema',SchemaWelcomeMsg);
